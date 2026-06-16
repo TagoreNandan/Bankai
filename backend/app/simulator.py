@@ -1,5 +1,11 @@
 from app.schemas import FlightPhase
 import random
+import time
+
+from app.schemas import (
+    TelemetryFrame,
+    FlightPhase,
+)
 
 
 class DroneSimulator:
@@ -40,6 +46,19 @@ class DroneSimulator:
             self.advance_phase()
 
         self.update_telemetry()
+
+        return TelemetryFrame(
+            timestamp=time.time(),
+            phase=self.phase,
+            altitude=round(self.altitude, 2),
+            airspeed=round(self.airspeed, 2),
+            battery=round(self.battery, 2),
+            rssi=round(self.rssi, 2),
+            pitch=round(self.pitch, 2),
+            roll=round(self.roll, 2),
+            latitude=round(self.latitude, 6),
+            longitude=round(self.longitude, 6),
+        )
 
 
 
