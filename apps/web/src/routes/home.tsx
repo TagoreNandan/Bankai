@@ -10,6 +10,10 @@ import BatteryChart from "../components/BatteryChart";
 import PhaseTimeline from "../components/PhaseTimeline";
 import MissionLog from "../components/MissionLog";
 
+import UAVMap from "../components/UAVMap";
+
+import AttitudeIndicator from "../components/AttitudeIndicator";
+
 
 export default function Home() {
   useTelemetry();
@@ -94,6 +98,15 @@ export default function Home() {
                 : "--"
             }
           />
+        </div>
+
+
+        <div className="mt-8">
+          <UAVMap />
+        </div>
+
+        <div className="mt-8">
+          <AttitudeIndicator />
         </div>
 
         <div className="mt-8 rounded-xl border border-cyan-500/20 p-6">

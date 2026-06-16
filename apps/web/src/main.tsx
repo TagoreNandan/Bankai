@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router";
+import "./lib/leaflet";
 
 import "./index.css";
 import { router } from "./router";

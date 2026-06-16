@@ -124,6 +124,9 @@ class DroneSimulator:
             100 - (self.altitude * 0.15)
         )
 
+        self.pitch = random.uniform(-10, 10)
+        self.roll = random.uniform(-15, 15)
+
     def reset(self):
         self.phase = FlightPhase.PREFLIGHT
 
@@ -140,6 +143,3 @@ class DroneSimulator:
         self.longitude = 78.3489
 
         self.phase_elapsed = 0
-
-        self.pitch = random.uniform(-10, 10)
-        self.roll = random.uniform(-15, 15)
