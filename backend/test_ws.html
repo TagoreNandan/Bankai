@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h2>Telemetry Stream</h2>
+    <pre id="output"></pre>
+
+    <script>
+        const output = document.getElementById("output");
+
+        const ws = new WebSocket("ws://localhost:8000/ws/telemetry");
+
+        ws.onopen = () => {
+            console.log("CONNECTED");
+            output.textContent = "Connected...\n";
+        };
+
+        ws.onmessage = (event) => {
+            console.log(event.data);
+
+            output.textContent =
+                JSON.stringify(
+                    JSON.parse(event.data),
+                    null,
+                    2
+                );
+        };
+
+        ws.onerror = (err) => {
+            console.error("WS ERROR", err);
+        };
+
+        ws.onclose = () => {
+            console.log("WS CLOSED");
+        };
+    </script>
+</body>
+
+</html>
