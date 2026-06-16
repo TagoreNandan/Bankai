@@ -7,6 +7,10 @@ import { useTelemetryStore } from "../store/telemetryStore";
 import AltitudeChart from "../components/AltitudeChart";
 import BatteryChart from "../components/BatteryChart";
 
+import PhaseTimeline from "../components/PhaseTimeline";
+import MissionLog from "../components/MissionLog";
+
+
 export default function Home() {
   useTelemetry();
 
@@ -36,10 +40,13 @@ export default function Home() {
               : "bg-red-500/20 text-red-400"
               }`}
           >
-            {connected
-              ? "CONNECTED"
-              : "DISCONNECTED"}
+            {connected ? "CONNECTED" : "DISCONNECTED"}
           </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PhaseTimeline />
+          <MissionLog />
         </div>
 
         <div className="grid gap-4 md:grid-cols-5">
@@ -98,14 +105,6 @@ export default function Home() {
             <AltitudeChart />
             <BatteryChart />
           </div>
-
-          <pre className="overflow-x-auto text-sm text-zinc-300">
-            {JSON.stringify(
-              latest,
-              null,
-              2
-            )}
-          </pre>
         </div>
       </div>
     </div>
