@@ -11,10 +11,25 @@ manager = ConnectionManager()
 
 simulator = DroneSimulator()
 
+battery_profiles = {
+    "3000": 3000,
+    "6000": 6000,
+    "10000": 10000,
+}
+
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.post("/config/battery/{capacity}")
+def set_battery(capacity: int):
+    simulator.battery_capacity = capacity
+    simulator.remaining_capacity = capacity
+
+    return {
+        "capacity": capacity
+    }
 
 
 

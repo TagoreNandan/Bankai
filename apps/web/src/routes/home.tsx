@@ -14,6 +14,10 @@ import UAVMap from "../components/UAVMap";
 
 import AttitudeIndicator from "../components/AttitudeIndicator";
 
+import AlertPanel from "../components/AlertPanel";
+
+import BatterySelector from "../components/BatterySelector";
+
 
 export default function Home() {
   useTelemetry();
@@ -51,6 +55,17 @@ export default function Home() {
         <div className="grid gap-4 lg:grid-cols-2">
           <PhaseTimeline />
           <MissionLog />
+        </div>
+
+        <div className="mt-4">
+          <AlertPanel />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <BatterySelector />
+          <div className="rounded-full bg-green-500/20 px-4 py-2 text-green-400">
+            CONNECTED
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-5">

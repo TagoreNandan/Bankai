@@ -4,6 +4,8 @@ import type { TelemetryFrame } from "../types/telemetry";
 
 import { useTelemetryStore } from "../store/telemetryStore";
 import { useMissionStore } from "../store/missionStore";
+import { useAlertStore } from "../store/alertStore";
+import type { Alert } from "../store/alertStore";
 
 export function useTelemetry() {
     const addFrame =
@@ -17,6 +19,10 @@ export function useTelemetry() {
 
     const previousPhase =
         useRef<string | null>(null);
+
+    const setAlerts =
+        useAlertStore((s) => s.setAlerts);
+
 
     useEffect(() => {
         console.log("Telemetry Hook Started");
@@ -81,6 +87,38 @@ export function useTelemetry() {
                 frame.phase;
 
             addFrame(frame);
+
+            const alerts: Alert[] = [];
+
+            if (frame.battery < 20) {
+                alerts.push({
+                    level: "warning",
+                    message: "Battery below 20%",
+                });
+            }
+
+            if (frame.battery < 10) {
+                alerts.push({
+                    level: "critical",
+                    message: "Critical battery level",
+                });
+            }
+
+            if (frame.rssi < 50) {
+                alerts.push({
+                    level: "warning",
+                    message: "Weak signal",
+                });
+            }
+
+            if (frame.rssi < 30) {
+                alerts.push({
+                    level: "critical",
+                    message: "Signal almost lost",
+                });
+            }
+
+            setAlerts(alerts);
         };
 
         return () => {

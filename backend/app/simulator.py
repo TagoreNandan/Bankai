@@ -25,6 +25,22 @@ class DroneSimulator:
         self.latitude = 17.4450
         self.longitude = 78.3489
 
+        self.battery_capacity = 6000
+        self.remaining_capacity = 6000
+        self.current_draw = {
+            FlightPhase.PREFLIGHT: 1,
+            FlightPhase.TAKEOFF: 35,
+            FlightPhase.CLIMB: 28,
+            FlightPhase.CRUISE: 18,
+            FlightPhase.LOITER: 12,
+            FlightPhase.RTB: 18,
+            FlightPhase.LANDING: 15,
+            FlightPhase.POSTFLIGHT: 1,
+        }
+
+        self.home_lat = 17.4450
+        self.home_lon = 78.3489
+
         self.phase_elapsed = 0
 
         self.phase_durations = {
@@ -37,6 +53,16 @@ class DroneSimulator:
             FlightPhase.LANDING: 30,
             FlightPhase.POSTFLIGHT: 20,
         }
+
+        self.waypoints = [
+            (17.4450, 78.3489),
+            (17.4465, 78.3505),
+            (17.4480, 78.3490),
+            (17.4475, 78.3465),
+            (17.4450, 78.3489),
+        ]
+
+        self.current_wp = 0
 
 
     def tick(self):
@@ -97,6 +123,28 @@ class DroneSimulator:
             self.altitude = 250 + random.uniform(-2, 2)
             self.airspeed = random.uniform(18, 22)
 
+            target_lat, target_lon = \
+                self.waypoints[self.current_wp]
+
+            self.latitude += (
+                target_lat - self.latitude
+            ) * 0.03
+
+            self.longitude += (
+                target_lon - self.longitude
+            ) * 0.03
+
+            if (
+                abs(self.latitude - target_lat)
+                < 0.0001
+                and
+                abs(self.longitude - target_lon)
+                < 0.0001
+            ):
+                self.current_wp = (
+                    self.current_wp + 1
+                ) % len(self.waypoints)
+
         elif self.phase == FlightPhase.LOITER:
             self.altitude += random.uniform(-2, 2)
             self.airspeed = random.uniform(8, 12)
@@ -118,10 +166,31 @@ class DroneSimulator:
             if self.phase_elapsed > 20:
                 self.reset()
 
-        self.battery = max(0, self.battery - 0.15)
+        current = self.current_draw[self.phase]
+        self.remaining_capacity -= (
+            current / 3600
+        )
+
+        self.battery = (
+            self.remaining_capacity
+            / self.battery_capacity
+        ) * 100
+
+        distance = (
+                (
+                self.latitude -
+                self.home_lat
+            ) ** 2
+            +
+            (
+                self.longitude -
+                self.home_lon
+            ) ** 2
+        ) ** 0.5 * 111000
+
         self.rssi = max(
             20,
-            100 - (self.altitude * 0.15)
+            100 - distance / 20
         )
 
         self.pitch = random.uniform(-10, 10)
@@ -143,3 +212,7 @@ class DroneSimulator:
         self.longitude = 78.3489
 
         self.phase_elapsed = 0
+
+        self.remaining_capacity = self.battery_capacity
+
+        self.current_wp = 0
