@@ -1,20 +1,20 @@
 export default function BatterySelector() {
-    async function setBattery(
+    const handleBatteryChange = async (
         capacity: number
-    ) {
+    ) => {
         await fetch(
-            `https://bankai-oaoj.onrender.com/config/battery/${capacity}`
+            `${import.meta.env.VITE_API_URL}/config/battery/${capacity}`,
             {
                 method: "POST",
             }
         );
-    }
+    };
 
     return (
         <select
             defaultValue="1300"
             onChange={(e) =>
-                setBattery(
+                handleBatteryChange(
                     Number(e.target.value)
                 )
             }
