@@ -244,15 +244,15 @@ The home coordinate is a fixed point set in the simulator's config, and the miss
 
 ## Design Decisions
 
-**WebSocket over SSE or polling.** SSE is one-directional and polling introduces artificial latency. WebSocket is bidirectional — the same connection that receives telemetry could send commands back to the drone in a production system.
+**WebSocket over SSE or polling*-** SSE is one-directional and polling introduces artificial latency. WebSocket is bidirectional — the same connection that receives telemetry could send commands back to the drone in a production system.
 
-**No REST endpoints.** All data flows through the typed WebSocket protocol. This keeps the communication model simple and mirrors how protocols like MAVLink operate in real UAV systems.
+**No REST endpoints*-** All data flows through the typed WebSocket protocol. This keeps the communication model simple and mirrors how protocols like MAVLink operate in real UAV systems.
 
-**Server-owned state.** The simulation runs from server startup, not from client connection. This means the mission progresses whether or not anyone is watching — the same way a real drone operates independently of ground observers.
+**Server-owned stat*-** The simulation runs from server startup, not from client connection. This means the mission progresses whether or not anyone is watching — the same way a real drone operates independently of ground observers.
 
-**Zustand for the rolling buffer.** React state triggers full re-renders. Zustand lets each chart subscribe only to its own metric slice, so the altitude chart re-renders when altitude updates, not when RSSI does.
+**Zustand for the rolling buffe*-** React state triggers full re-renders. Zustand lets each chart subscribe only to its own metric slice, so the altitude chart re-renders when altitude updates, not when RSSI does.
 
-**Continuous looping missions.** When a mission cycle completes, the simulation restarts and the charts continue accumulating data rather than resetting. The graphs show repeated mission profiles over time — useful for spotting drift or degradation across cycles.
+**Continuous looping missions*-** When a mission cycle completes, the simulation restarts and the charts continue accumulating data rather than resetting. The graphs show repeated mission profiles over time — useful for spotting drift or degradation across cycles.
 
 ---
 
@@ -268,5 +268,5 @@ The home coordinate is a fixed point set in the simulator's config, and the miss
 ## Author
 
 **Tagore Nandan**
-Computer Science Engineering
-Hyderabad Institute of Technology and Management
+**Computer Science Engineering**
+**Hyderabad Institute of Technology and Management**
