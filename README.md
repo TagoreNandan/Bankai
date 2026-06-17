@@ -3,6 +3,7 @@
 A real-time telemetry dashboard for monitoring simulated UAV missions, built with FastAPI and React using WebSockets as the primary telemetry transport. Telemetry updates stream in real time without polling.
 
 Live Demo - https://bankai-web.vercel.app
+NOTE: The backend uses Render's free tier, which may require ~20–30 seconds to wake from inactivity before telemetry begins streaming.
 
 ---
 
