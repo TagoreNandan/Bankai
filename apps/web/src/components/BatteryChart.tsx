@@ -3,10 +3,10 @@ import {
     Area,
     XAxis,
     YAxis,
+    Tooltip,
     ResponsiveContainer,
+    CartesianGrid,
 } from "recharts";
-
-import { CartesianGrid, Tooltip } from "recharts";
 
 import { useTelemetryStore } from "../store/telemetryStore";
 
@@ -25,7 +25,14 @@ export default function BatteryChart() {
                 width="100%"
                 height={220}
             >
-                <AreaChart data={frames.slice(-50)}>
+                <AreaChart
+                    data={frames.slice(-50)}
+                >
+                    <CartesianGrid
+                        stroke="#0f172a"
+                        strokeDasharray="3 3"
+                    />
+
                     <XAxis hide />
 
                     <YAxis
@@ -40,9 +47,12 @@ export default function BatteryChart() {
                             "Battery",
                         ]}
                         contentStyle={{
-                            backgroundColor: "#111827",
-                            border: "1px solid #22d3ee",
-                            borderRadius: "8px",
+                            backgroundColor:
+                                "#111827",
+                            border:
+                                "1px solid #22d3ee",
+                            borderRadius:
+                                "8px",
                         }}
                         itemStyle={{
                             color: "#22d3ee",
@@ -54,13 +64,9 @@ export default function BatteryChart() {
                         dataKey="battery"
                         stroke="#22d3ee"
                         fill="#164e63"
+                        fillOpacity={0.4}
                     />
                 </AreaChart>
-
-                <CartesianGrid
-                    stroke="#0f172a"
-                    strokeDasharray="3 3"
-                />
             </ResponsiveContainer>
         </div>
     );
