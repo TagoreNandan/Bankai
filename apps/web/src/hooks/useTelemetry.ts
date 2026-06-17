@@ -20,15 +20,17 @@ export function useTelemetry() {
     const previousPhase =
         useRef<string | null>(null);
 
+    const missionStarted =
+        useRef(false);
+
     const setAlerts =
         useAlertStore((s) => s.setAlerts);
-
 
     useEffect(() => {
         console.log("Telemetry Hook Started");
 
         const ws = new WebSocket(
-            "ws://localhost:8000/ws/telemetry"
+            "wss://bankai-oaoj.onrender.com/ws/telemetry"
         );
 
         ws.onopen = () => {
@@ -63,18 +65,42 @@ export function useTelemetry() {
                 "MESSAGE RECEIVED"
             );
 
+            console.log(
+                "PREVIOUS PHASE:",
+                previousPhase.current
+            );
+
             const frame: TelemetryFrame =
                 JSON.parse(event.data);
 
+            console.log(
+                "FORCED MISSION START"
+            );
+
             console.log(frame);
 
-            if (
-                previousPhase.current === null
-            ) {
+            console.log(
+                "PREVIOUS PHASE:",
+                previousPhase.current
+            );
+
+            if (!missionStarted.current) {
+                missionStarted.current = true;
+
+                const startTime =
+                    Date.now();
+
+
+                console.log(
+                    "MISSION START SET:",
+                    startTime
+                );
+
                 addEvent(
                     `Mission Started (${frame.phase})`
                 );
-            } else if (
+            }
+            else if (
                 previousPhase.current !==
                 frame.phase
             ) {
@@ -93,28 +119,32 @@ export function useTelemetry() {
             if (frame.battery < 20) {
                 alerts.push({
                     level: "warning",
-                    message: "Battery below 20%",
+                    message:
+                        "Battery below 20%",
                 });
             }
 
             if (frame.battery < 10) {
                 alerts.push({
                     level: "critical",
-                    message: "Critical battery level",
+                    message:
+                        "Critical battery level",
                 });
             }
 
             if (frame.rssi < 50) {
                 alerts.push({
                     level: "warning",
-                    message: "Weak signal",
+                    message:
+                        "Weak signal",
                 });
             }
 
             if (frame.rssi < 30) {
                 alerts.push({
                     level: "critical",
-                    message: "Signal almost lost",
+                    message:
+                        "Signal almost lost",
                 });
             }
 
