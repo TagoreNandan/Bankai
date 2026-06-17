@@ -3,7 +3,7 @@ export default function BatterySelector() {
         capacity: number
     ) {
         await fetch(
-            `http://localhost:8000/config/battery/${capacity}`,
+            `https://bankai-oaoj.onrender.com/config/battery/${capacity}`
             {
                 method: "POST",
             }
