@@ -1,14 +1,12 @@
 # BanKai — UAV Ground Control Station
 
-A real-time telemetry dashboard for monitoring simulated UAV missions. Built with FastAPI and React over a pure WebSocket transport — no REST endpoints, no polling.
+A real-time telemetry dashboard for monitoring simulated UAV missions, built with FastAPI and React using WebSockets as the primary telemetry transport. Telemetry updates stream in real time without polling.
+
+Live Demo - https://bankai-web.vercel.app
 
 ---
 
-## What This Is
-
 BanKai is a Ground Control Station that streams drone telemetry live and renders it without ever refreshing the page. It simulates a complete UAV mission lifecycle — from pre-flight checks through landing — and visualises altitude profile, battery consumption, signal strength, and aircraft attitude as the mission progresses.
-
-The backend owns the mission state entirely. The simulation starts when the server starts and runs continuously regardless of whether a browser is connected. When you open the dashboard, you're tapping into a live stream at whatever point the mission currently is — if the drone is at 120m with 58% battery when you connect, that's what you see. This reflects how a real GCS operates: the telemetry source is independent of observer connections.
 
 ---
 
@@ -25,7 +23,7 @@ The interface is organised around three layers:
 - Battery Consumption (Area Chart) — drains visibly over the mission; triggers alerts at 20% and 10%
 - RSSI Signal Strength (Line Chart) — degrades as the drone moves away from home position, recovers on RTB
 
-Below the charts: an Attitude Indicator (artificial horizon) showing live pitch and roll, and a Leaflet map plotting the drone's GPS track over the actual IIIT Hyderabad campus — where Skyeris operates.
+Below the charts: an Attitude Indicator (artificial horizon) showing live pitch and roll, and a Leaflet map plotting the drone's GPS track in real time.
 
 ---
 
@@ -38,7 +36,7 @@ React Frontend (TypeScript)
         │
 FastAPI Backend (Python)
         │
-DroneSimulator — stateful mission engine, runs from server startup
+DroneSimulator — stateful mission engine
 ```
 
 There are no HTTP endpoints for data. Every piece of telemetry — frames, phase changes, and alerts — arrives through a single WebSocket connection as typed JSON messages:
@@ -58,12 +56,12 @@ The frontend dispatches each message by `type` and updates only the relevant sli
 | Layer | Stack |
 |---|---|
 | Frontend | React, TypeScript, Vite |
-| State | Zustand (rolling 60-frame buffer per metric) |
-| Charts | Recharts (Line, Area) |
+| State | Zustand |
+| Charts | Line, Area|
 | Map | React-Leaflet + OpenStreetMap |
-| Styling | Tailwind CSS + shadcn/ui |
+| Styling | Tailwind CSS + shadcn/u |
 | Backend | FastAPI, Python, asyncio |
-| Transport | WebSockets (native, no socket.io) |
+| Transport | WebSockets |
 | Deployment | Vercel (frontend), Render (backend) |
 
 ---
@@ -111,122 +109,94 @@ Open the browser and the dashboard connects automatically. That's it.
 
 ---
 
-## Simulation Design
+## How the Simulation Works
 
-The simulator models realistic UAV physics rather than generating random noise. Each metric is phase-aware.
+Every metric on the dashboard comes from a deterministic formula, not random noise dressed up to look like telemetry. The simulator ticks once every **0.5 seconds** (`Δt = 0.5s`) — that's why the KPI cards update at 2Hz. Each formula below uses that same tick interval.
 
-**Altitude** follows a smooth interpolation toward a phase target, with Gaussian noise applied per frame:
+Quick reference:
 
-```
-altitude += climb_rate × Δt + gauss(0, 1.5)
-```
-
-Cruise altitude is capped at 120m — the legal ceiling under DGCA drone regulations in India.
-
-**Battery** drains at a phase-dependent rate. Motor load is highest during takeoff and climb, lowest during descent:
-
-| Phase | Drain rate |
-|---|---|
-| TAKEOFF | 0.45% / sec |
-| CLIMB | 0.38% / sec |
-| CRUISE | 0.28% / sec |
-| LOITER | 0.22% / sec |
-| RTB / LANDING | 0.18–0.30% / sec |
-
-Over a full mission cycle (~160 seconds), battery drops roughly 45–50%. Different battery capacities (1300 mAh, 2200 mAh, 3900 mAh) are selectable from the dashboard and scale the mission duration accordingly.
-
-**RSSI** degrades with distance from the home position using a linear loss model:
-
-```
-rssi = max(40, 100 - distance_factor)
-```
-
-Signal recovers as the drone returns home during RTB, producing a visible arc on the chart.
-
-**Pitch and Roll** vary by phase — gentle during cruise (±3°), aggressive banking during loiter (±20° roll) to simulate circular flight patterns.
-
----
-
-## Telemetry Formulas
-
-Every metric in the dashboard is computed from a deterministic formula, not arbitrary random values. Here's the exact math behind each one.
+| Metric | Driven by | Behavior |
+|---|---|---|
+| Altitude | Climb rate per phase | Moves toward phase target |
+| Battery | Drain rate per phase | Decreases monotonically |
+| RSSI | Distance from home | Falls as drone moves away, recovers on return |
+| Airspeed | Target speed per phase | Hovers around the phase's target with small jitter |
+| Pitch / Roll | Phase-specific limits | Bounded random walk |
+| GPS Position | Airspeed + heading | Traces the route on the map |
 
 ### Altitude
 
-Altitude moves toward a phase-specific target at a defined climb rate, with small Gaussian noise added each tick to simulate real atmospheric turbulence and sensor jitter:
+**What it does:** climbs or descends toward whatever altitude the current mission phase calls for, with a small amount of jitter added each tick so the line doesn't look perfectly straight (simulating turbulence and sensor noise).
 
 ```
-altitude(t+1) = altitude(t) + (climb_rate × Δt) + gauss(μ=0, σ=1.5)
+altitude(t+1) = altitude(t) + (climb_rate × Δt) + noise
+noise ~ Gaussian(mean = 0, std = 1.5)
+altitude(t+1) = max(0, altitude(t+1))   ← never goes below ground
 ```
 
-During descent phases (RTB, LANDING), `climb_rate` is negative. Altitude is clamped to zero — the drone can't go underground:
-
-```
-altitude(t+1) = max(0, altitude(t+1))
-```
-
-Climb rates by phase:
+Climb rate depends on the phase:
 
 | Phase | Climb Rate |
 |---|---|
 | TAKEOFF | +3.5 m/s |
 | CLIMB | +4.0 m/s |
-| CRUISE | 0 m/s (holds 120m) |
+| CRUISE | 0 m/s (holds 120m — the standard VLOS altitude ceiling under DGCA's Drone Rules) |
 | LOITER | −0.5 m/s (slight drift) |
 | RTB | −3.0 m/s |
 | LANDING | −2.0 m/s |
 
----
+**Worked example:** drone is at 80m, just entered CLIMB.
+`80 + (4.0 × 0.5) + ~0 = 82m` this tick → `84m` next tick → `86m` the tick after, and so on until it nears 120m and switches to CRUISE.
 
 ### Battery
 
-Battery drains continuously from the moment the simulation starts. The drain rate varies with motor load — heavier phases (takeoff, climb) consume more power than cruise or descent:
+**What it does:** drains continuously from mission start. The drain rate isn't constant — it's higher when the motors are working harder (takeoff, climb) and lower during cruise or descent.
 
 ```
 battery(t+1) = battery(t) − (drain_rate × Δt)
+battery(t+1) = max(0, battery(t+1))
 ```
 
-`drain_rate` is expressed as percentage per second and is phase-dependent (see Simulation Design table above). Battery is clamped at 0% and never goes negative.
+Drain rate by phase:
 
-The selected battery capacity (mAh) from the dashboard scales the drain rate inversely — a 1300 mAh pack drains faster than a 3900 mAh pack for the same motor load:
+| Phase | Drain Rate |
+|---|---|
+| TAKEOFF | 0.45% / sec |
+| CLIMB | 0.38% / sec |
+| CRUISE | 0.28% / sec |
+| LOITER | 0.22% / sec |
+| RTB | 0.30% / sec |
+| LANDING | 0.18% / sec |
 
-```
-effective_drain = base_drain_rate × (reference_capacity / selected_capacity)
-```
+The battery capacity selected on the dashboard (1300 / 2000 / 2500 / 3000 mAh) scales the effective drain rate — a smaller pack drains faster for the same motor load, which is the physically correct behavior and is what makes the battery chart's slope steeper or shallower depending on which pack you pick.
 
-This means the charts will show a steeper slope with a smaller battery selected, which is the correct physical behaviour.
+**Worked example:** drone at 70% battery, in CRUISE, one tick (0.5s) later:
+`70 − (0.28 × 0.5) = 69.86%`
 
----
+Over a full ~160-second mission, that adds up to roughly a 45–50% drop — consistent with what the Battery Consumption chart shows by the time the mission reaches RTB.
 
 ### RSSI (Signal Strength)
 
-RSSI is modelled as a function of the drone's distance from the home position. As the UAV moves further away, signal degrades. As it returns, signal recovers. A floor of 40 prevents the value from going unrealistically low:
+**What it does:** signal strength is tied to how far the drone is from its home position, not to anything random. The farther out, the weaker the signal; it recovers as the drone heads home during RTB.
 
 ```
 distance = haversine(current_lat, current_lon, home_lat, home_lon)
-
-rssi = max(40, 100 − (distance × distance_loss_factor))
+rssi(t) = max(40, 100 − (distance × distance_loss_factor)) + noise
+noise ~ Gaussian(mean = 0, std = 2)
 ```
 
-`distance_loss_factor` is tuned so that RSSI drops to ~60 at the mission's furthest point (approximately 400–500m from home), and recovers toward ~90 as the drone returns. Gaussian noise (σ=2) is added per frame to simulate radio interference:
+`distance_loss_factor` is tuned so RSSI bottoms out around 60 at the mission's furthest point (roughly 400–500m from home) and climbs back toward ~90 as the drone returns — that arc is what produces the dip-and-recover shape on the RSSI chart.
 
-```
-rssi(t) = rssi(t) + gauss(μ=0, σ=2)
-```
-
-Alert thresholds trigger when RSSI falls below 50 (warning) or 30 (critical).
-
----
+**Worked example:** at 300m from home, signal loss is roughly `300 × 0.089 ≈ 27`, so `rssi ≈ 100 − 27 = 73` (plus a small noise wobble). Alerts fire when RSSI drops below 50 (warning) or 30 (critical).
 
 ### Airspeed
 
-Airspeed is set to a phase-specific target with small random variation applied each tick:
+**What it does:** settles around a target speed for the current phase, with small tick-to-tick variation so it doesn't look perfectly flat.
 
 ```
-airspeed(t) = phase_target_speed + gauss(μ=0, σ=0.8)
+airspeed(t) = phase_target_speed + noise
+noise ~ Gaussian(mean = 0, std = 0.8)
 ```
-
-Target speeds by phase:
 
 | Phase | Target Speed |
 |---|---|
@@ -238,18 +208,17 @@ Target speeds by phase:
 | RTB | 12–15 m/s |
 | LANDING | 2–5 m/s |
 
----
+**Worked example:** in CRUISE with a target of 18 m/s, consecutive readings might come in as 17.6, 18.3, 17.9 — close to 18 but never perfectly flat, which is what real airspeed sensors look like.
 
 ### Pitch and Roll (Attitude)
 
-Pitch and roll are simulated as bounded random walks within phase-specific limits. Each tick, the value shifts slightly from its previous position:
+**What it does:** rather than snapping between fixed values, pitch and roll drift gradually — each tick nudges slightly from the previous value, bounded within limits that depend on the phase.
 
 ```
-pitch(t+1) = pitch(t) + gauss(μ=0, σ=0.5)
-pitch(t+1) = clamp(pitch(t+1), −pitch_limit, +pitch_limit)
+pitch(t+1)  = clamp(pitch(t) + noise, −pitch_limit, +pitch_limit)
+roll(t+1)   = clamp(roll(t)  + noise, −roll_limit,  +roll_limit)
+noise ~ Gaussian(mean = 0, std = 0.5)
 ```
-
-The same formula applies to roll with its own limits. Phase-specific limits:
 
 | Phase | Pitch Limit | Roll Limit |
 |---|---|---|
@@ -258,26 +227,24 @@ The same formula applies to roll with its own limits. Phase-specific limits:
 | LOITER | ±3° | ±20° (banking in circles) |
 | LANDING | ±5° | ±3° |
 
-The exaggerated roll during LOITER (±20°) is intentional — it simulates the drone banking while flying a circular holding pattern, which is what makes the attitude indicator visibly active during that phase.
-
----
+The wide roll range during LOITER (±20°) is deliberate — it simulates the drone banking through a circular holding pattern, which is what makes the attitude indicator visibly animated during that phase instead of sitting still.
 
 ### GPS Position
 
-The drone's lat/lon position is updated each tick based on current airspeed and a heading derived from the mission phase. Position is computed using a flat-earth approximation (valid for distances under ~10km):
+**What it does:** updates the drone's lat/lon each tick based on current airspeed and the heading for that leg of the route, using a flat-earth approximation (accurate enough for distances under ~10km).
 
 ```
-Δlat = (airspeed × cos(heading) × Δt) / 111_139
-Δlon = (airspeed × sin(heading) × Δt) / (111_139 × cos(lat))
+Δlat = (airspeed × cos(heading) × Δt) / 111139
+Δlon = (airspeed × sin(heading) × Δt) / (111139 × cos(lat))
 ```
 
-The home position is set to IIIT Hyderabad campus (17.4450°N, 78.3489°E), which is where Skyeris Aero Tech is based. The drone departs from this point, flies a waypoint route, and returns during RTB — this is what the Leaflet map traces in real time.
+The home coordinate is a fixed point set in the simulator's config, and the mission flies a closed waypoint loop — departing from home, out to the furthest waypoint, then back during RTB. That loop is exactly what the Leaflet map traces in real time.
 
 ---
 
 ## Design Decisions
 
-**WebSocket over SSE or polling.** SSE is one-directional and polling introduces artificial latency. WebSocket is bidirectional — the same connection that receives telemetry could send commands back to the drone in a production system. The architecture is already correct for that extension.
+**WebSocket over SSE or polling.** SSE is one-directional and polling introduces artificial latency. WebSocket is bidirectional — the same connection that receives telemetry could send commands back to the drone in a production system.
 
 **No REST endpoints.** All data flows through the typed WebSocket protocol. This keeps the communication model simple and mirrors how protocols like MAVLink operate in real UAV systems.
 
@@ -291,16 +258,15 @@ The home position is set to IIIT Hyderabad campus (17.4450°N, 78.3489°E), whic
 
 ## What I'd Add With More Time
 
+- **IoT support** - I would like to extend support for iot devices like arduino, building a real time dashboard for metrics.
 - **Historical playback** — replay a past mission from a stored frame log
 - **Multi-drone support** — one WebSocket stream per drone, switchable from the dashboard
-- **Real MAVLink integration** — swap the simulator for a live PX4 or ArduPilot feed without changing the frontend
 - **Geofencing** — alert when the drone exits a defined polygon on the map
-- **Persistent telemetry storage** — so reconnecting clients can replay frames they missed
 
 ---
 
 ## Author
 
-**Tagore Nandan**  
-Computer Science Engineering  
+**Tagore Nandan**
+Computer Science Engineering
 Hyderabad Institute of Technology and Management
