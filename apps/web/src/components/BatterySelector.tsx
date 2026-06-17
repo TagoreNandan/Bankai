@@ -12,6 +12,7 @@ export default function BatterySelector() {
 
     return (
         <select
+            defaultValue="1300"
             onChange={(e) =>
                 setBattery(
                     Number(e.target.value)
@@ -19,16 +20,20 @@ export default function BatterySelector() {
             }
             className="rounded bg-zinc-900 p-2"
         >
+            <option value="1300">
+                1300 mAh
+            </option>
+
+            <option value="2000">
+                2000 mAh
+            </option>
+
+            <option value="2500">
+                2500 mAh
+            </option>
+
             <option value="3000">
                 3000 mAh
-            </option>
-
-            <option value="6000" selected>
-                6000 mAh
-            </option>
-
-            <option value="10000">
-                10000 mAh
             </option>
         </select>
     );

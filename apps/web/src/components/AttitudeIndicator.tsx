@@ -14,12 +14,12 @@ export default function AttitudeIndicator() {
 
             <div className="flex flex-col items-center">
                 <div
-                    className="relative h-56 w-56 overflow-hidden rounded-full border-4 border-cyan-500"
+                    className="relative h-44 w-44 overflow-hidden rounded-full border-4 border-cyan-500"
                 >
                     <div
-                        className="absolute inset-[-50%]"
+                        className="absolute inset-0"
                         style={{
-                            transform: `translateY(${pitch * 2}px) rotate(${roll}deg)`,
+                            transform: `translateY(${pitch}px) rotate(${roll}deg)`,
                         }}
                     >
                         {/* Sky */}
@@ -37,7 +37,7 @@ export default function AttitudeIndicator() {
                     <div className="absolute left-1/2 top-1/2 h-8 w-1 -translate-x-1/2 -translate-y-1/2 bg-cyan-400" />
                 </div>
 
-                <div className="mt-4 text-center">
+                <div className="mt-2 text-center">
                     <div>Pitch: {pitch.toFixed(1)}°</div>
                     <div>Roll: {roll.toFixed(1)}°</div>
                 </div>

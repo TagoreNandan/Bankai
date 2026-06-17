@@ -28,7 +28,7 @@ export default function UAVMap() {
     return (
         <div className="rounded-xl border border-cyan-500/20 p-4">
             <h3 className="mb-4 text-lg font-semibold">
-                Live UAV Position
+                Flight Path Visualization
             </h3>
 
             <MapContainer

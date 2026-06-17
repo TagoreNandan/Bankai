@@ -25,17 +25,17 @@ class DroneSimulator:
         self.latitude = 17.4450
         self.longitude = 78.3489
 
-        self.battery_capacity = 6000
-        self.remaining_capacity = 6000
+        self.battery_capacity = 1300
+        self.remaining_capacity = 1300
         self.current_draw = {
-            FlightPhase.PREFLIGHT: 1,
-            FlightPhase.TAKEOFF: 35,
-            FlightPhase.CLIMB: 28,
-            FlightPhase.CRUISE: 18,
-            FlightPhase.LOITER: 12,
-            FlightPhase.RTB: 18,
-            FlightPhase.LANDING: 15,
-            FlightPhase.POSTFLIGHT: 1,
+            FlightPhase.PREFLIGHT: 2000,
+            FlightPhase.TAKEOFF: 25000,
+            FlightPhase.CLIMB: 20000,
+            FlightPhase.CRUISE: 15000,
+            FlightPhase.LOITER: 12000,
+            FlightPhase.RTB: 18000,
+            FlightPhase.LANDING: 10000,
+            FlightPhase.POSTFLIGHT: 1000,
         }
 
         self.home_lat = 17.4450
@@ -44,14 +44,14 @@ class DroneSimulator:
         self.phase_elapsed = 0
 
         self.phase_durations = {
-            FlightPhase.PREFLIGHT: 20,
-            FlightPhase.TAKEOFF: 20,
-            FlightPhase.CLIMB: 60,
-            FlightPhase.CRUISE: 240,
-            FlightPhase.LOITER: 120,
-            FlightPhase.RTB: 120,
-            FlightPhase.LANDING: 30,
-            FlightPhase.POSTFLIGHT: 20,
+            FlightPhase.PREFLIGHT: 5,
+            FlightPhase.TAKEOFF: 8,
+            FlightPhase.CLIMB: 20,
+            FlightPhase.CRUISE: 90,
+            FlightPhase.LOITER: 45,
+            FlightPhase.RTB: 45,
+            FlightPhase.LANDING: 10,
+            FlightPhase.POSTFLIGHT: 5,
         }
 
         self.waypoints = [
@@ -106,21 +106,39 @@ class DroneSimulator:
             self.phase = phases[current_index + 1]
             self.phase_elapsed = 0
 
+        else:
+            self.reset()
+
     def update_telemetry(self):
         if self.phase == FlightPhase.PREFLIGHT:
             self.altitude = 0
             self.airspeed = 0
+            self.pitch = 0
+            self.roll = 0
+        
 
         elif self.phase == FlightPhase.TAKEOFF:
-            self.altitude += 6
+            self.altitude = min(
+                30,
+                self.altitude + 3.5
+            )
+
             self.airspeed = 8
+            self.pitch = random.uniform(5, 10)
+            self.roll = random.uniform(-5, 5)
 
         elif self.phase == FlightPhase.CLIMB:
-            self.altitude += 10
+            self.altitude = min(
+                120,
+                self.altitude + 4
+            )
             self.airspeed = 15
+
+            self.pitch = random.uniform(8, 15)
+            self.roll = random.uniform(-4, 4)
             
         elif self.phase == FlightPhase.CRUISE:
-            self.altitude = 250 + random.uniform(-2, 2)
+            self.altitude = 120 + random.uniform(-3, 3)
             self.airspeed = random.uniform(18, 22)
 
             target_lat, target_lon = \
@@ -146,18 +164,49 @@ class DroneSimulator:
                 ) % len(self.waypoints)
 
         elif self.phase == FlightPhase.LOITER:
-            self.altitude += random.uniform(-2, 2)
-            self.airspeed = random.uniform(8, 12)
+            self.altitude = 100 + random.uniform(-5, 5)
+            self.airspeed = random.uniform(
+                8,12
+            )
+            self.pitch = random.uniform(
+                -3,3
+            )
+            self.roll = random.uniform(
+                -20,20
+            )
 
         elif self.phase == FlightPhase.RTB:
-            self.airspeed = 18
+            self.altitude = max(
+                30,
+                self.altitude - 3
+            )
 
+            self.airspeed = 18
             self.latitude -= 0.00005
             self.longitude -= 0.00005
 
+            self.pitch = random.uniform(
+                -4,4
+            )
+
+            self.roll = random.uniform(
+                -8,8
+            )
+
         elif self.phase == FlightPhase.LANDING:
-            self.altitude = max(0, self.altitude - 12)
+            self.altitude = max(
+                0,
+                self.altitude - 2
+            )
             self.airspeed = 5
+
+            self.pitch = random.uniform(
+                -6,
+                -2
+            )
+            self.roll = random.uniform(
+                -3,3
+            )
 
         elif self.phase == FlightPhase.POSTFLIGHT:
             self.altitude = 0
@@ -189,13 +238,14 @@ class DroneSimulator:
         ) ** 0.5 * 111000
 
         self.rssi = max(
-            20,
-            100 - distance / 20
+            15,
+            100 - distance / 3
         )
 
-        self.pitch = random.uniform(-10, 10)
-        self.roll = random.uniform(-15, 15)
 
+        print(self.remaining_capacity)
+        print(self.battery)
+    
     def reset(self):
         self.phase = FlightPhase.PREFLIGHT
 

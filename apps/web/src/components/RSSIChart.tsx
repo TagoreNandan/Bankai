@@ -3,14 +3,13 @@ import {
     Line,
     XAxis,
     YAxis,
+    Tooltip,
     ResponsiveContainer,
 } from "recharts";
 
-import { CartesianGrid, Tooltip } from "recharts";
-
 import { useTelemetryStore } from "../store/telemetryStore";
 
-export default function AltitudeChart() {
+export default function RSSIChart() {
     const frames = useTelemetryStore(
         (s) => s.frames
     );
@@ -18,23 +17,28 @@ export default function AltitudeChart() {
     return (
         <div className="rounded-xl border border-cyan-500/20 p-4">
             <h3 className="mb-4 text-lg font-semibold">
-                Altitude Profile
+                RSSI Signal
             </h3>
 
             <ResponsiveContainer
                 width="100%"
-                height={220}
+                height={180}
             >
-                <LineChart data={frames.slice(-50)}>
+                <LineChart
+                    data={frames.slice(-50)}
+                >
                     <XAxis hide />
 
-                    <YAxis hide />
+                    <YAxis
+                        width={50}
+                        domain={[0, 100]}
+                    />
 
                     <Tooltip
                         labelFormatter={() => ""}
                         formatter={(value) => [
-                            `${Number(value).toFixed(1)} m`,
-                            "Altitude",
+                            `${Number(value).toFixed(1)}`,
+                            "RSSI",
                         ]}
                         contentStyle={{
                             backgroundColor: "#111827",
@@ -47,19 +51,12 @@ export default function AltitudeChart() {
                     />
 
                     <Line
-                        type="natural"
-                        dataKey="altitude"
+                        type="monotone"
+                        dataKey="rssi"
                         stroke="#22d3ee"
                         dot={false}
                     />
                 </LineChart>
-
-                <CartesianGrid
-                    stroke="#0f172a"
-                    strokeDasharray="3 3"
-                />
-
-
             </ResponsiveContainer>
         </div>
     );

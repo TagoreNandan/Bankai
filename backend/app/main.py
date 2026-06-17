@@ -24,8 +24,11 @@ async def health():
 
 @app.post("/config/battery/{capacity}")
 def set_battery(capacity: int):
+
     simulator.battery_capacity = capacity
     simulator.remaining_capacity = capacity
+
+    simulator.battery = 100
 
     return {
         "capacity": capacity
