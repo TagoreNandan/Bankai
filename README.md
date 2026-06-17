@@ -32,7 +32,7 @@ Below the charts: an Attitude Indicator (artificial horizon) showing live pitch 
 ```
 React Frontend (TypeScript)
         │
-        │  WebSocket  ws://localhost:8000/ws/telemetry
+        │  WebSocket
         │
 FastAPI Backend (Python)
         │
